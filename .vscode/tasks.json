@@ -1,0 +1,85 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Watch Extension (esbuild)",
+      "type": "npm",
+      "script": "watch:esbuild",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "esbuild",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": [
+          {
+            "regexp": "^✘ \\[ERROR\\] (.*)$",
+            "message": 1
+          },
+          {
+            "regexp": "^\\s+(.+):(\\d+):(\\d+):$",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[watch\\] build started",
+          "endsPattern": "^\\[watch\\] build finished"
+        }
+      }
+    },
+    {
+      "label": "Build Webview",
+      "type": "npm",
+      "script": "build:webview",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Dev: Build webview + Watch esbuild",
+      "dependsOn": [
+        "Build Webview",
+        "Watch Extension (esbuild)"
+      ],
+      "dependsOrder": "sequence",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Compile Extension",
+      "type": "npm",
+      "script": "compile",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "PreLaunch: build webview + compile",
+      "dependsOn": [
+        "Build Webview",
+        "Compile Extension"
+      ],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "Watch Types (tsc)",
+      "type": "npm",
+      "script": "watch:tsc",
+      "problemMatcher": [
+        "$tsc-watch"
+      ]
+    },
+    {
+      "label": "Watch Webview (vite)",
+      "type": "npm",
+      "script": "watch:webview",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

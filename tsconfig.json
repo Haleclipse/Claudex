@@ -1,0 +1,32 @@
+{
+	"compilerOptions": {
+		"module": "ES2020",
+		"target": "ES2022",
+		"lib": [
+			"ES2022"
+		],
+		"moduleResolution": "node",
+		"allowSyntheticDefaultImports": true,
+		"sourceMap": true,
+		"rootDir": "src",
+		"strict": true,   /* enable all strict type-checking options */
+		"declaration": true,
+		"experimentalDecorators": true,
+        "emitDecoratorMetadata": true
+		/* Additional Checks */
+		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
+		// "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
+		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
+	},
+	"include": [
+		"src/**/*.ts"
+	],
+	"exclude": [
+		"node_modules",
+		"dist",
+		"out",
+		"media",
+		"webview",
+		"ref"
+	]
+}
