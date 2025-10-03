@@ -46,6 +46,12 @@ export const messageQueueState = reactive<MessageQueueState>({
   queuedMessages: []
 });
 
+// 模型状态
+export const modelState = reactive({
+  options: [] as string[],
+  selected: 'claude-4-sonnet'
+});
+
 // ========== 消息总线 ==========
 
 class WebviewMessageBus {
@@ -213,10 +219,26 @@ class WebviewMessageBus {
       console.log('[MessageBus] 新会话已创建:', message.payload.sessionId);
     });
 
-    // 处理系统就绪
+    // 处理系统就绪（也作为配置更新使用）
     this.on('system/ready', (message) => {
       sessionState.capabilities = message.payload.capabilities;
-      console.log('[MessageBus] 系统就绪:', message.payload.capabilities);
+      console.log('[MessageBus] 系统就绪/更新:', message.payload.capabilities);
+      // 更新模型列表
+      if (Array.isArray(message.payload.models)) {
+        const newOptions = message.payload.models.slice();
+        modelState.options = newOptions;
+
+        // 如果当前选择不在新列表里，则回退到推荐或第一个
+        if (!newOptions.includes(modelState.selected)) {
+          const recommended = message.payload.selectedModel && newOptions.includes(message.payload.selectedModel)
+            ? message.payload.selectedModel
+            : (newOptions[0] || modelState.selected);
+          modelState.selected = recommended;
+        }
+      } else if (message.payload.selectedModel && !modelState.selected) {
+        // 初次初始化：没有 options 时保存默认选择
+        modelState.selected = message.payload.selectedModel;
+      }
     });
 
     // 处理系统错误
@@ -732,7 +754,7 @@ export function sendChatMessage(text: string, sessionId?: string): string {
   // 发送到 Extension
   messageBus.send({
     type: 'chat/send',
-    payload: { text, sessionId }
+    payload: { text, sessionId, model: modelState.selected }
   });
 
   return requestId;
@@ -875,5 +897,15 @@ if (typeof window !== 'undefined') {
       notifyUIReady();
       requestSessionList();
     }, 100);
+  });
+}
+
+/**
+ * 打开设置（可传查询）
+ */
+export function openSettings(query?: string) {
+  messageBus.send({
+    type: 'settings/open',
+    payload: { query }
   });
 }

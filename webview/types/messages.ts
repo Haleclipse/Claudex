@@ -91,6 +91,8 @@ export interface SystemReadyMessage extends BaseMessage {
   type: 'system/ready';
   payload: {
     capabilities: string[];
+    models?: string[];
+    selectedModel?: string;
   };
 }
 
@@ -144,6 +146,7 @@ export interface ChatSendMessage extends BaseMessage {
   payload: {
     text: string;
     sessionId?: string;
+    model?: string;
   };
 }
 
@@ -167,6 +170,14 @@ export interface PermissionResponseMessage extends BaseMessage {
   };
 }
 
+// 打开设置
+export interface SettingsOpenMessage extends BaseMessage {
+  type: 'settings/open';
+  payload: {
+    query?: string;
+  };
+}
+
 // ========== 联合类型 ==========
 
 // Extension发出的所有消息
@@ -187,7 +198,8 @@ export type WebviewMessage =
   | SessionSwitchMessage
   | ChatSendMessage
   | ChatInterruptMessage
-  | PermissionResponseMessage;
+  | PermissionResponseMessage
+  | SettingsOpenMessage;
 
 // 所有消息的联合类型
 export type Message = ExtensionMessage | WebviewMessage;

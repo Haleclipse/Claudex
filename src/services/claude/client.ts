@@ -24,6 +24,7 @@ export class ClaudeClient {
   private activeBus?: UiMessageBus;
   private activeSessions: Map<string, UiMessageBus> = new Map();
   private currentSessionId?: string;
+  private configWatcher?: vscode.Disposable;
 
   constructor(
     private readonly sessionService: IClaudeCodeSessionService,
@@ -39,10 +40,47 @@ export class ClaudeClient {
     this.logService.debug('[ClaudeClient] Webview 已连接');
 
     // 发送初始化消息
+    const cfg = vscode.workspace.getConfiguration('claudex');
+    const builtInModels = ['claude-4-sonnet', 'claude-4.1-opus'];
+    const custom = (cfg.get<string>('customModel') || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => !!s);
+    // 合并并去重
+    const models = Array.from(new Set([...builtInModels, ...custom]));
+    const selectedModel = cfg.get<string>('model') || models[0] || 'claude-4-sonnet';
+
     this.sendToWebview({
       type: 'system/ready',
       payload: {
-        capabilities: ['chat', 'sessions', 'streaming', 'permissions', 'tools']
+        capabilities: ['chat', 'sessions', 'streaming', 'permissions', 'tools'],
+        models,
+        selectedModel
+      }
+    });
+
+    // 监听配置变化，动态推送模型列表和默认选择
+    this.configWatcher?.dispose();
+    this.configWatcher = vscode.workspace.onDidChangeConfiguration(e => {
+      if (
+        e.affectsConfiguration('claudex.customModel') ||
+        e.affectsConfiguration('claudex.model')
+      ) {
+        const cfg2 = vscode.workspace.getConfiguration('claudex');
+        const custom2 = (cfg2.get<string>('customModel') || '')
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+        const models2 = Array.from(new Set([...builtInModels, ...custom2]));
+        const selected2 = cfg2.get<string>('model') || models2[0] || 'claude-4-sonnet';
+        this.sendToWebview({
+          type: 'system/ready',
+          payload: {
+            capabilities: ['chat', 'sessions', 'streaming', 'permissions', 'tools'],
+            models: models2,
+            selectedModel: selected2
+          }
+        });
       }
     });
   }
@@ -69,6 +107,9 @@ export class ClaudeClient {
           break;
         case 'chat/send':
           await this.handleChatSend(message.payload);
+          break;
+        case 'settings/open':
+          await vscode.commands.executeCommand('workbench.action.openSettings', message.payload?.query || 'claudex');
           break;
         case 'chat/interrupt':
           this.handleChatInterrupt();
@@ -195,7 +236,7 @@ export class ClaudeClient {
   /**
    * 处理聊天发送
    */
-  private async handleChatSend(payload: { text: string; sessionId?: string }): Promise<void> {
+  private async handleChatSend(payload: { text: string; sessionId?: string; model?: string }): Promise<void> {
     if (!payload?.text?.trim()) {
       this.sendToWebview({
         type: 'system/error',
@@ -227,6 +268,11 @@ export class ClaudeClient {
 
     try {
       const request: ClaudeRequest = { prompt: payload.text };
+      if (payload.model) {
+        request.options = {
+          model: payload.model
+        } as any;
+      }
       const controller = new AbortController();
 
       const result = await this.claudeAgent.handleRequest(
@@ -281,6 +327,24 @@ export class ClaudeClient {
   private async handleUIReady(): Promise<void> {
     // 初始化时发送会话列表
     await this.handleSessionList();
+
+    // 再次发送系统能力与模型列表，避免早期消息丢失
+    const cfg = vscode.workspace.getConfiguration('claudex');
+    const builtInModels = ['claude-4-sonnet', 'claude-4.1-opus'];
+    const custom = (cfg.get<string>('customModel') || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => !!s);
+    const models = Array.from(new Set([...builtInModels, ...custom]));
+    const selectedModel = cfg.get<string>('model') || models[0] || 'claude-4-sonnet';
+    this.sendToWebview({
+      type: 'system/ready',
+      payload: {
+        capabilities: ['chat', 'sessions', 'streaming', 'permissions', 'tools'],
+        models,
+        selectedModel
+      }
+    });
   }
 
   /**
@@ -353,6 +417,7 @@ export class ClaudeClient {
     this.activeBus?.complete();
     this.activeSessions.clear();
     this.webview = undefined;
+    this.configWatcher?.dispose();
     this.logService.debug('[ClaudeClient] 已清理资源');
   }
 }
