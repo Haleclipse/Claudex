@@ -85,28 +85,19 @@
           </template>
 
           <template #content="{ close }">
-            <DropdownItem
-              :item="{
-                id: 'claude-4-sonnet',
-                label: 'claude-4-sonnet',
-                checked: selectedModelLocal === 'claude-4-sonnet',
-                type: 'model'
-              }"
-              :is-selected="selectedModelLocal === 'claude-4-sonnet'"
-              :index="0"
-              @click="(item) => handleModelSelect(item, close)"
-            />
-            <DropdownItem
-              :item="{
-                id: 'claude-4.1-opus',
-                label: 'claude-4.1-opus',
-                checked: selectedModelLocal === 'claude-4.1-opus',
-                type: 'model'
-              }"
-              :is-selected="selectedModelLocal === 'claude-4.1-opus'"
-              :index="1"
-              @click="(item) => handleModelSelect(item, close)"
-            />
+            <template v-for="(m, idx) in modelOptions" :key="m">
+              <DropdownItem
+                :item="{
+                  id: m,
+                  label: m,
+                  checked: selectedModelLocal === m,
+                  type: 'model'
+                }"
+                :is-selected="selectedModelLocal === m"
+                :index="idx"
+                @click="(item) => handleModelSelect(item, close)"
+              />
+            </template>
             <DropdownSeparator />
             <DropdownItem
               :item="{
@@ -115,8 +106,8 @@
                 rightIcon: 'codicon-chevron-right',
                 type: 'action'
               }"
-              :index="2"
-              @click="(item) => handleModelSelect(item, close)"
+              :index="modelOptions.length + 1"
+              @click="() => handleOpenModelSettings(close)"
             />
           </template>
         </DropdownTrigger>
@@ -166,6 +157,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { DropdownTrigger, DropdownItem, DropdownSeparator, type DropdownItemData } from './Dropdown'
+import { modelState, openSettings } from '../services/messageBus'
 
 interface Props {
   disabled?: boolean
@@ -192,7 +184,8 @@ const props = withDefaults(defineProps<Props>(), {
   hasInputContent: false
 })
 
-const selectedModelLocal = ref(props.selectedModel)
+const selectedModelLocal = computed(() => modelState.selected || props.selectedModel)
+const modelOptions = computed(() => modelState.options.length ? modelState.options : [props.selectedModel])
 
 const emit = defineEmits<Emits>()
 
@@ -260,18 +253,19 @@ function handleModelDropdown() {
 
 function handleModelSelect(item: DropdownItemData, close: () => void) {
   console.log('Selected model:', item)
-  selectedModelLocal.value = item.id
+  // 更新全局选中模型
+  if (item.type === 'model') {
+    modelState.selected = String(item.id)
+  }
   close()
 
   // 可以在这里添加模型切换的业务逻辑
-  switch (item.id) {
-    case 'claude-4-sonnet':
-      console.log('Switching to Claude 4 Sonnet')
-      break
-    case 'claude-4.1-opus':
-      console.log('Switching to Claude 4.1 Opus')
-      break
-  }
+  console.log('Switched model to:', item.id)
+}
+
+function handleOpenModelSettings(close: () => void) {
+  openSettings('claudex.customModel')
+  close()
 }
 </script>
 

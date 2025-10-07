@@ -80,6 +80,7 @@ import ChatInputBox from '../components/ChatInputBox.vue';
 import InputExtraBox from '../components/InputExtraBox.vue';
 import MessageContainer from '../components/Messages/MessageContainer.vue';
 import type { Todo, FileEdit } from '../../types/toolbar';
+import { modelState } from '../services/messageBus';
 
 // 定义事件
 const emit = defineEmits<{
@@ -87,7 +88,7 @@ const emit = defineEmits<{
 }>();
 
 const progressPercentage = ref(48.7);
-const selectedModel = ref('claude-4-sonnet');
+const selectedModel = computed(() => modelState.selected);
 
 // ========== 滚动逻辑 ==========
 const messageContainerRef = ref<InstanceType<typeof MessageContainer>>();

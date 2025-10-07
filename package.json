@@ -39,6 +39,12 @@
           ],
           "order": 2
         },
+        "claudex.customModel": {
+          "type": "string",
+          "markdownDescription": "自定义模型列表，逗号分隔；示例：`my-model-a, my-model-b`",
+          "default": "",
+          "order": 2.1
+        },
         "claudex.permissionMode": {
           "type": "string",
           "markdownDescription": "权限模式",
