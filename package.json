@@ -410,7 +410,7 @@
     "vue-tsc": "^3.0.8"
   },
   "dependencies": {
-    "@anthropic-ai/claude-code": "^1.0.123",
+    "@anthropic-ai/claude-agent-sdk": "^0.1.9",
     "@anthropic-ai/sdk": "^0.63.1",
     "@mdi/font": "^7.4.47",
     "@modelcontextprotocol/sdk": "^1.18.1",
