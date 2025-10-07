@@ -2,7 +2,7 @@
  * 消息内容提取和处理工具函数
  */
 
-import type { 
+import type {
   SDKMessage,
   SDKUserMessage,
   SDKAssistantMessage,
@@ -24,9 +24,9 @@ export interface ContentBlock {
 }
 
 // 消息类型枚举
-export type MessageType = 
+export type MessageType =
   | 'user'
-  | 'assistant_text' 
+  | 'assistant_text'
   | 'assistant_tool_use'
   | 'assistant_mixed'
   | 'stream_event'
@@ -99,18 +99,18 @@ export function getMessageType(message: SDKMessage): MessageType {
  */
 function extractUserMessageText(message: SDKUserMessage): string {
   const content = message.message.content;
-  
+
   if (typeof content === 'string') {
     return content;
   }
-  
+
   if (Array.isArray(content)) {
     return content
       .filter((block: any) => block.type === 'text')
       .map((block: any) => block.text)
       .join(' ');
   }
-  
+
   return '';
 }
 
@@ -119,14 +119,14 @@ function extractUserMessageText(message: SDKUserMessage): string {
  */
 function extractAssistantMessageText(message: SDKAssistantMessage): string {
   const content = message.message.content;
-  
+
   if (Array.isArray(content)) {
     return content
       .filter((block: any) => block.type === 'text')
       .map((block: any) => block.text)
       .join(' ');
   }
-  
+
   return '';
 }
 
@@ -156,17 +156,17 @@ function extractSystemMessageText(message: SDKMessage): string {
   if (message.type !== 'system') {
     return '';
   }
-  
+
   // 类型守卫：检查是否为 SDKSystemMessage
   if (isSDKSystemMessage(message)) {
     return `系统初始化 - 模型: ${message.model || '未知'}`;
   }
-  
+
   // 类型守卫：检查是否为 SDKCompactBoundaryMessage
   if (isSDKCompactBoundaryMessage(message)) {
     return '压缩边界标记';
   }
-  
+
   return '系统消息';
 }
 
@@ -189,12 +189,12 @@ export function isSDKCompactBoundaryMessage(message: SDKMessage): message is SDK
  */
 function extractStreamEventText(message: SDKPartialAssistantMessage): string {
   const event = message.event;
-  
+
   // @ts-ignore - stream event structure
   if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
     return event.delta.text || '';
   }
-  
+
   return '';
 }
 
@@ -203,11 +203,11 @@ function extractStreamEventText(message: SDKPartialAssistantMessage): string {
  */
 function extractUserContentBlocks(message: SDKUserMessage): ContentBlock[] {
   const content = message.message.content;
-  
+
   if (typeof content === 'string') {
     return [{ type: 'text', text: content }];
   }
-  
+
   if (Array.isArray(content)) {
     return content.map((block: any) => {
       switch (block.type) {
@@ -226,7 +226,7 @@ function extractUserContentBlocks(message: SDKUserMessage): ContentBlock[] {
       }
     });
   }
-  
+
   return [];
 }
 
@@ -235,11 +235,11 @@ function extractUserContentBlocks(message: SDKUserMessage): ContentBlock[] {
  */
 function extractAssistantContentBlocks(message: SDKAssistantMessage): ContentBlock[] {
   const content = message.message.content;
-  
+
   if (!Array.isArray(content)) {
     return [];
   }
-  
+
   return content.map((block: any) => {
     switch (block.type) {
       case 'text':
@@ -270,14 +270,14 @@ function extractStreamContentBlocks(message: SDKPartialAssistantMessage): Conten
  */
 function getAssistantMessageType(message: SDKAssistantMessage): MessageType {
   const content = message.message.content;
-  
+
   if (!Array.isArray(content)) {
     return 'assistant_text';
   }
-  
+
   const hasText = content.some((block: any) => block.type === 'text');
   const hasToolUse = content.some((block: any) => block.type === 'tool_use');
-  
+
   if (hasText && hasToolUse) {
     return 'assistant_mixed';
   } else if (hasToolUse) {
@@ -330,10 +330,10 @@ export function isMessageStreaming(message: SDKMessage): boolean {
  */
 export function getToolIcon(toolName: string): string {
   const name = toolName.toLowerCase();
-  
+
   const iconMap: Record<string, string> = {
     'bash': 'codicon-terminal',
-    'read': 'codicon-file-text',
+    'read': 'codicon-eye-two',
     'write': 'codicon-edit',
     'edit': 'codicon-edit',
     'multiedit': 'codicon-edit',
@@ -346,7 +346,7 @@ export function getToolIcon(toolName: string): string {
     'todowrite': 'codicon-list-unordered',
     'notebookedit': 'codicon-notebook'
   };
-  
+
   return iconMap[name] || 'codicon-tools';
 }
 
@@ -355,7 +355,7 @@ export function getToolIcon(toolName: string): string {
  */
 export function getToolDescription(toolName: string): string {
   const name = toolName.toLowerCase();
-  
+
   const descMap: Record<string, string> = {
     'bash': '执行命令',
     'read': '读取文件',
@@ -371,7 +371,7 @@ export function getToolDescription(toolName: string): string {
     'todowrite': '任务管理',
     'notebookedit': '笔记本编辑'
   };
-  
+
   return descMap[name] || '';
 }
 
@@ -464,12 +464,12 @@ export function getMessageComponentType(message: any): string {
   if (message.metadata?.correlationId && message.metadata?.toolName) {
     return 'permission';
   }
-  
+
   // 检查是否为错误消息
   if (message.role === 'error' || message.status === 'error' || message.metadata?.error) {
     return 'error';
   }
-  
+
   // 基于 SDK 消息类型判断
   if (message.sdkMessage) {
     switch (message.sdkMessage.type) {
@@ -497,7 +497,7 @@ export function getMessageComponentType(message: any): string {
         return 'unknown';
     }
   }
-  
+
   // 基于角色判断
   switch (message.role) {
     case 'user':

@@ -125,11 +125,12 @@ function handleMouseEnter() {
 
 .menu-item-icon-span {
   flex-shrink: 0;
-  width: 13px;
+  width: 16px;
+  min-width: 16px;
   color: var(--vscode-foreground);
   display: flex !important;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   font-size: 12px !important;
 }
 
