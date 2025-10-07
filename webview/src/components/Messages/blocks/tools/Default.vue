@@ -1,8 +1,8 @@
 <template>
-  <div class="default-tool-renderer">
+  <div class="default-tool">
     <div class="tool-params">
       <div class="params-label">参数:</div>
-      
+
       <!-- 简单参数展示 -->
       <div v-if="hasSimpleParams" class="simple-params">
         <div v-for="(value, key) in simpleParams" :key="key" class="param-item">
@@ -10,7 +10,7 @@
           <span class="param-value" :class="getValueClass(value)">{{ formatValue(value) }}</span>
         </div>
       </div>
-      
+
       <!-- 复杂参数展示 -->
       <div v-if="hasComplexParams" class="complex-params">
         <details class="complex-details" :open="autoExpand">
@@ -21,7 +21,7 @@
           <pre class="complex-content">{{ formattedComplexParams }}</pre>
         </details>
       </div>
-      
+
       <!-- 空参数提示 -->
       <div v-if="!hasSimpleParams && !hasComplexParams" class="empty-params">
         <span class="codicon codicon-info"></span>
@@ -45,15 +45,15 @@ const simpleParams = computed(() => {
   if (!props.input || typeof props.input !== 'object') {
     return {};
   }
-  
+
   const simple: Record<string, any> = {};
-  
+
   for (const [key, value] of Object.entries(props.input)) {
     if (isSimpleValue(value)) {
       simple[key] = value;
     }
   }
-  
+
   return simple;
 });
 
@@ -61,15 +61,15 @@ const complexParams = computed(() => {
   if (!props.input || typeof props.input !== 'object') {
     return {};
   }
-  
+
   const complex: Record<string, any> = {};
-  
+
   for (const [key, value] of Object.entries(props.input)) {
     if (!isSimpleValue(value)) {
       complex[key] = value;
     }
   }
-  
+
   return complex;
 });
 
@@ -122,7 +122,7 @@ function getValueClass(value: any): string {
 </script>
 
 <style scoped>
-.default-tool-renderer {
+.default-tool {
   font-family: var(--vscode-editor-font-family);
 }
 

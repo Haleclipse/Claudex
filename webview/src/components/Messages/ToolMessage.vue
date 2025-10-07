@@ -73,10 +73,21 @@ import { computed } from 'vue';
 import { getToolMessage, setPermissionResponse } from '../../stores/toolMessageStore';
 import { sendPermissionResponse } from '../../services/messageBus';
 import { getToolIcon, getToolDescription } from '../../utils/messageUtils';
-import BashToolRenderer from './blocks/tools/BashToolRenderer.vue';
-import FileToolRenderer from './blocks/tools/FileToolRenderer.vue';
-import SearchToolRenderer from './blocks/tools/SearchToolRenderer.vue';
-import DefaultToolRenderer from './blocks/tools/DefaultToolRenderer.vue';
+// 新的细粒度工具渲染器
+import Bash from './blocks/tools/Bash.vue';
+import Read from './blocks/tools/Read.vue';
+import Write from './blocks/tools/Write.vue';
+import Edit from './blocks/tools/Edit.vue';
+import MultiEdit from './blocks/tools/MultiEdit.vue';
+import Glob from './blocks/tools/Glob.vue';
+import Grep from './blocks/tools/Grep.vue';
+import WebSearch from './blocks/tools/WebSearch.vue';
+import TodoWrite from './blocks/tools/TodoWrite.vue';
+import Task from './blocks/tools/Task.vue';
+import ExitPlanMode from './blocks/tools/ExitPlanMode.vue';
+import WebFetch from './blocks/tools/WebFetch.vue';
+import SlashCommand from './blocks/tools/SlashCommand.vue';
+import Default from './blocks/tools/Default.vue';
 
 interface Props {
   toolUseId: string;
@@ -164,19 +175,23 @@ const statusClass = computed(() => {
 function getToolRenderer() {
   const name = toolName.value.toLowerCase();
 
-  if (name === 'bash') {
-    return BashToolRenderer;
-  }
+  const toolMap: Record<string, any> = {
+    'bash': Bash,
+    'read': Read,
+    'write': Write,
+    'edit': Edit,
+    'multiedit': MultiEdit,
+    'glob': Glob,
+    'grep': Grep,
+    'websearch': WebSearch,
+    'todowrite': TodoWrite,
+    'task': Task,
+    'exitplanmode': ExitPlanMode,
+    'webfetch': WebFetch,
+    'slashcommand': SlashCommand
+  };
 
-  if (['read', 'write', 'edit', 'multiedit', 'glob'].includes(name)) {
-    return FileToolRenderer;
-  }
-
-  if (['grep', 'websearch'].includes(name)) {
-    return SearchToolRenderer;
-  }
-
-  return DefaultToolRenderer;
+  return toolMap[name] || Default;
 }
 
 // 处理权限确认

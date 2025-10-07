@@ -1,5 +1,5 @@
 <template>
-  <div class="search-tool-renderer">
+  <div class="grep-tool">
     <div class="search-pattern" v-if="pattern">
       <div class="pattern-label">搜索模式:</div>
       <div class="pattern-content">
@@ -7,8 +7,8 @@
         <code class="pattern-text">{{ pattern }}</code>
       </div>
     </div>
-    
-    <div v-if="isGrepTool" class="grep-options">
+
+    <div class="grep-options">
       <div class="options-label">搜索选项:</div>
       <div class="options-grid">
         <div v-if="searchPath" class="option-item">
@@ -16,26 +16,26 @@
           <span class="option-key">路径:</span>
           <span class="option-value">{{ searchPath }}</span>
         </div>
-        
+
         <div v-if="glob" class="option-item">
           <span class="codicon codicon-filter"></span>
           <span class="option-key">文件过滤:</span>
           <span class="option-value">{{ glob }}</span>
         </div>
-        
+
         <div v-if="fileType" class="option-item">
           <span class="codicon codicon-file-code"></span>
           <span class="option-key">文件类型:</span>
           <span class="option-value">{{ fileType }}</span>
         </div>
-        
+
         <div v-if="outputMode" class="option-item">
           <span class="codicon codicon-output"></span>
           <span class="option-key">输出模式:</span>
           <span class="option-value">{{ outputMode }}</span>
         </div>
       </div>
-      
+
       <div v-if="hasFlags" class="search-flags">
         <div class="flags-label">搜索标志:</div>
         <div class="flags-list">
@@ -58,31 +58,7 @@
         </div>
       </div>
     </div>
-    
-    <div v-if="isWebSearchTool" class="web-search-options">
-      <div class="query-content" v-if="query">
-        <div class="query-label">搜索查询:</div>
-        <div class="query-text">{{ query }}</div>
-      </div>
-      
-      <div v-if="hasWebOptions" class="web-options">
-        <div class="options-label">网络搜索选项:</div>
-        <div class="options-grid">
-          <div v-if="allowedDomains && allowedDomains.length" class="option-item">
-            <span class="codicon codicon-verified"></span>
-            <span class="option-key">允许域名:</span>
-            <span class="option-value">{{ allowedDomains.join(', ') }}</span>
-          </div>
-          
-          <div v-if="blockedDomains && blockedDomains.length" class="option-item">
-            <span class="codicon codicon-error"></span>
-            <span class="option-key">屏蔽域名:</span>
-            <span class="option-value">{{ blockedDomains.join(', ') }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    
+
     <div v-if="hasLimits" class="search-limits">
       <div class="limits-label">限制条件:</div>
       <div class="limits-grid">
@@ -105,20 +81,8 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const isGrepTool = computed(() => {
-  return props.toolName.toLowerCase() === 'grep';
-});
-
-const isWebSearchTool = computed(() => {
-  return props.toolName.toLowerCase() === 'websearch';
-});
-
 const pattern = computed(() => {
   return props.input?.pattern;
-});
-
-const query = computed(() => {
-  return props.input?.query;
 });
 
 const searchPath = computed(() => {
@@ -157,21 +121,8 @@ const headLimit = computed(() => {
   return props.input?.head_limit;
 });
 
-const allowedDomains = computed(() => {
-  return props.input?.allowed_domains;
-});
-
-const blockedDomains = computed(() => {
-  return props.input?.blocked_domains;
-});
-
 const hasFlags = computed(() => {
   return caseInsensitive.value || multiline.value || showLineNumbers.value || contextLines.value;
-});
-
-const hasWebOptions = computed(() => {
-  return (allowedDomains.value && allowedDomains.value.length) || 
-         (blockedDomains.value && blockedDomains.value.length);
 });
 
 const hasLimits = computed(() => {
@@ -180,14 +131,13 @@ const hasLimits = computed(() => {
 </script>
 
 <style scoped>
-.search-tool-renderer {
+.grep-tool {
   font-family: var(--vscode-editor-font-family);
 }
 
 .pattern-label,
 .options-label,
 .flags-label,
-.query-label,
 .limits-label {
   color: color-mix(in srgb, var(--vscode-foreground) 80%, transparent);
   font-size: 0.9em;
@@ -214,8 +164,7 @@ const hasLimits = computed(() => {
   font-weight: 500;
 }
 
-.grep-options,
-.web-search-options {
+.grep-options {
   border-top: 1px solid var(--vscode-panel-border);
   padding-top: 8px;
   margin-top: 8px;
@@ -266,20 +215,6 @@ const hasLimits = computed(() => {
   border-radius: 3px;
   font-size: 0.8em;
   font-weight: 500;
-}
-
-.query-content {
-  margin-bottom: 8px;
-}
-
-.query-text {
-  background-color: color-mix(in srgb, var(--vscode-editor-background) 60%, transparent);
-  border: 1px solid var(--vscode-input-border);
-  border-radius: 4px;
-  padding: 6px 8px;
-  font-family: var(--vscode-editor-font-family);
-  color: var(--vscode-foreground);
-  border-left: 3px solid var(--vscode-charts-blue);
 }
 
 .search-limits {

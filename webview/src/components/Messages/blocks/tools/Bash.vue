@@ -1,10 +1,10 @@
 <template>
-  <div class="bash-tool-renderer">
+  <div class="bash-tool">
     <div class="bash-command">
       <div class="command-label">命令:</div>
       <pre class="command-content">{{ command }}</pre>
     </div>
-    
+
     <div v-if="hasOptions" class="bash-options">
       <div class="options-label">选项:</div>
       <div class="options-grid">
@@ -57,7 +57,7 @@ const hasOptions = computed(() => {
 </script>
 
 <style scoped>
-.bash-tool-renderer {
+.bash-tool {
   font-family: var(--vscode-editor-font-family);
 }
 
