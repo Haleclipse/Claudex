@@ -3,6 +3,7 @@
     :tabindex="tabIndex"
     :data-message-index="messageIndex"
     class="user-message"
+    :class="{ 'is-sticky': sticky }"
   >
     <div class="message-wrapper">
       <div
@@ -54,6 +55,7 @@ interface Props {
   messageIndex: number;
   tabIndex: number;
   isEditing: boolean;
+  sticky?: boolean;
 }
 
 interface Emits {
@@ -62,7 +64,9 @@ interface Emits {
   (e: 'save-edit', content: string): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  sticky: false
+});
 const emit = defineEmits<Emits>();
 
 const chatInputRef = ref<InstanceType<typeof ChatInputBox>>();
@@ -142,7 +146,14 @@ onUnmounted(() => {
   padding: 1px 12px 8px;
   background-color: var(--vscode-sideBar-background);
   opacity: 1;
-  position: relative;
+  /* 吸顶时的阴影效果 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.user-message.is-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .message-wrapper {
@@ -164,7 +175,7 @@ onUnmounted(() => {
 }
 
 .message-content.editing {
-  z-index: 10;
+  z-index: 200;
   border: none;
   background-color: transparent;
 }

@@ -17,6 +17,7 @@
 
     <main class="main">
       <MessageContainer
+        ref="messageContainerRef"
         :messages="chatState.messages"
         @edit-message="handleEditMessage"
         class="custom-scroll-container"
@@ -63,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import {
   chatState,
   sessionState,
@@ -87,6 +88,53 @@ const emit = defineEmits<{
 
 const progressPercentage = ref(48.7);
 const selectedModel = ref('claude-4-sonnet');
+
+// ========== 滚动逻辑 ==========
+const messageContainerRef = ref<InstanceType<typeof MessageContainer>>();
+
+// 获取实际的滚动容器（即 MessageContainer 根元素本身）
+const getScrollContainer = (): HTMLElement | null => {
+  const container = messageContainerRef.value?.$el as HTMLElement;
+  return container || null;
+};
+
+// 判断是否接近底部
+const isNearBottom = (threshold = 150): boolean => {
+  const inst: any = messageContainerRef.value as any;
+  if (inst && typeof inst.isAtBottom === 'function') {
+    return !!inst.isAtBottom();
+  }
+  const el = getScrollContainer();
+  if (!el) return false;
+  const { scrollTop, scrollHeight, clientHeight } = el;
+  return scrollHeight - scrollTop - clientHeight < threshold;
+};
+
+// 滚动到底部
+const scrollToBottom = (smooth = false): void => {
+  const inst: any = messageContainerRef.value as any;
+  if (inst && typeof inst.scrollToBottom === 'function') {
+    inst.scrollToBottom(smooth);
+    return;
+  }
+  const el = getScrollContainer();
+  if (!el) return;
+  el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+};
+
+// 滚动到新用户消息
+const scrollToNewUserMessage = (): void => {
+  const container = messageContainerRef.value?.$el as HTMLElement;
+  if (!container) return;
+
+  // 找到最后一个消息元素
+  const messages = container.querySelectorAll('[data-message-index]');
+  const lastMessage = messages[messages.length - 1] as HTMLElement;
+
+  if (lastMessage) {
+    lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
 
 // 计算聊天标题
 const chatTitle = computed(() => {
@@ -235,6 +283,65 @@ function handleNewChat() {
   // 创建新会话并重置当前状态
   createNewSession();
 }
+
+// ========== 滚动监听逻辑 ==========
+
+// 监听会话加载,加载完成后滚动到底部
+watch(
+  () => sessionState.currentSessionId,
+  (newSessionId, oldSessionId) => {
+    if (newSessionId && newSessionId !== oldSessionId) {
+      // 会话切换,等待消息加载完成后滚动到底部
+      nextTick(() => {
+        scrollToBottom(false);
+      });
+    }
+  }
+);
+
+// 监听消息变化,实现智能滚动
+watch(
+  () => chatState.messages,
+  (newMessages, oldMessages) => {
+    if (!newMessages || newMessages.length === 0) return;
+
+    const isNewMessage = newMessages.length > (oldMessages?.length || 0);
+
+    if (isNewMessage) {
+      const lastMessage = newMessages[newMessages.length - 1];
+
+      nextTick(() => {
+        if (lastMessage.role === 'user') {
+          // 用户消息: 滚动到消息顶部,留出下方空间
+          scrollToNewUserMessage();
+        } else if (lastMessage.role === 'assistant' && isNearBottom()) {
+          // Assistant 消息开始: 仅在底部时滚动
+          scrollToBottom();
+        }
+      });
+    }
+  },
+  { deep: true }
+);
+
+// 监听内容高度变化 (流式消息)
+onMounted(() => {
+  const container = messageContainerRef.value?.$el as HTMLElement;
+  if (container) {
+    const resizeObserver = new ResizeObserver(() => {
+      // 仅在用户已在底部时自动滚动
+      if (isNearBottom()) {
+        scrollToBottom(false); // instant scroll
+      }
+    });
+
+    resizeObserver.observe(container);
+
+    onUnmounted(() => {
+      resizeObserver.disconnect();
+    });
+  }
+});
 </script>
 
 <style scoped>

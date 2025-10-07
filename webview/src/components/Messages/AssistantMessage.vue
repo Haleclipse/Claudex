@@ -7,10 +7,6 @@
     <div class="message-wrapper">
       <div class="message-header">
         <!-- <span class="role-label">Claude</span> -->
-        <span v-if="streaming" class="streaming-indicator">
-          <span class="codicon codicon-loading codicon-modifier-spin"></span>
-          正在输入...
-        </span>
       </div>
 
       <div class="message-content">

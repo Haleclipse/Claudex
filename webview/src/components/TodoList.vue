@@ -45,8 +45,8 @@
               >
                 <div
                   v-if="todo.status === 'completed'"
-                  class="codicon codicon-x"
-                  style="font-size: 10px;"
+                  class="codicon codicon-check-two"
+                  style="font-size: 6px; margin-left: -1px"
                 />
               </div>
             </div>

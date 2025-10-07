@@ -5,16 +5,9 @@
     class="system-message"
   >
     <div class="message-wrapper">
-      <div class="message-header">
-        <span class="codicon codicon-info"></span>
-        <!-- <span class="message-role">系统</span>
-        <span class="message-time">{{ formattedTime }}</span> -->
-        <span v-if="messageType" class="message-type">{{ messageType }}</span>
-      </div>
-
-      <div class="message-content">
-        <div class="system-content">{{ message.content }}</div>
-      </div>
+      <span class="codicon codicon-info"></span>
+      <span v-if="messageType" class="message-type">{{ messageType }}</span>
+      <span class="system-content">{{ message.content }}</span>
     </div>
   </div>
 </template>
@@ -61,29 +54,16 @@ const messageType = computed(() => {
 }
 
 .message-wrapper {
-  background-color: transparent;
-}
-
-.message-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  background-color: transparent;
   font-size: 0.9em;
-  color: color-mix(in srgb, var(--vscode-foreground) 70%, transparent);
 }
 
-.message-header .codicon {
+.message-wrapper .codicon {
   color: var(--vscode-charts-yellow);
-}
-
-.message-role {
-  font-weight: 500;
-  color: var(--vscode-charts-yellow);
-}
-
-.message-time {
-  font-size: 0.8em;
+  flex-shrink: 0;
 }
 
 .message-type {
@@ -93,15 +73,12 @@ const messageType = computed(() => {
   border-radius: 3px;
   font-size: 0.7em;
   font-weight: 500;
-}
-
-.message-content {
-  margin-left: 0;
+  flex-shrink: 0;
 }
 
 .system-content {
   color: color-mix(in srgb, var(--vscode-foreground) 80%, transparent);
   font-style: italic;
-  font-size: 0.9em;
+  flex: 1;
 }
 </style>
