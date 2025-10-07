@@ -405,6 +405,7 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.4",
+    "vite-plugin-svg-icons": "^2.0.1",
     "vue": "^3.5.21",
     "vue-tsc": "^3.0.8"
   },
@@ -416,6 +417,7 @@
     "@vueuse/core": "^13.9.0",
     "marked": "^16.3.0",
     "motion-v": "^1.7.1",
+    "path-browserify-esm": "^1.0.6",
     "pinia": "^3.0.3",
     "rxjs": "^7.8.2",
     "zod": "^4.1.11"
