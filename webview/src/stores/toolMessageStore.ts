@@ -15,8 +15,8 @@ export interface ToolMessageState {
     is_error?: boolean;
     tool_use_id: string;
   };
+  toolUseResult?: any; // 工具执行的额外结果数据（如 structuredPatch）
   permissionState: 'none' | 'pending' | 'allowed' | 'denied';
-  executionState: 'waiting' | 'executing' | 'completed' | 'error';
   correlationId?: string; // 用于权限请求
 }
 
@@ -31,13 +31,12 @@ export const toolMessages = reactive(new Map<string, ToolMessageState>());
 export function upsertToolMessage(toolUseId: string, data: Partial<ToolMessageState>) {
   const existing = toolMessages.get(toolUseId) || {
     toolUseId,
-    permissionState: 'none' as const,
-    executionState: 'waiting' as const
+    permissionState: 'none' as const
   };
-  
+
   const updated = { ...existing, ...data };
   toolMessages.set(toolUseId, updated);
-  
+
   return updated;
 }
 
@@ -53,8 +52,7 @@ export function getToolMessage(toolUseId: string): ToolMessageState | undefined 
  */
 export function setToolUse(toolUse: { id: string; name: string; input: any }) {
   return upsertToolMessage(toolUse.id, {
-    toolUse,
-    executionState: 'waiting'
+    toolUse
   });
 }
 
@@ -63,8 +61,7 @@ export function setToolUse(toolUse: { id: string; name: string; input: any }) {
  */
 export function setToolResult(toolResult: { content: any; is_error?: boolean; tool_use_id: string }) {
   return upsertToolMessage(toolResult.tool_use_id, {
-    toolResult,
-    executionState: toolResult.is_error ? 'error' : 'completed'
+    toolResult
   });
 }
 
@@ -83,8 +80,7 @@ export function setPermissionRequest(toolUseId: string, correlationId: string) {
  */
 export function setPermissionResponse(toolUseId: string, allowed: boolean) {
   return upsertToolMessage(toolUseId, {
-    permissionState: allowed ? 'allowed' : 'denied',
-    executionState: allowed ? 'executing' : 'error'
+    permissionState: allowed ? 'allowed' : 'denied'
   });
 }
 
@@ -95,7 +91,7 @@ export function clearOldToolMessages(maxAge: number = 300000) { // 5分钟
   const now = Date.now();
   for (const [toolUseId, state] of toolMessages.entries()) {
     // 如果工具消息已完成且超过指定时间，可以清理
-    if (state.executionState === 'completed' || state.executionState === 'error') {
+    if (state.toolResult) {
       // 这里可以根据实际需要实现清理逻辑
       // 目前暂时保留所有消息
     }

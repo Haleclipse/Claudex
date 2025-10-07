@@ -49,6 +49,14 @@ export interface ClaudeEventMessage extends Omit<BaseMessage, 'timestamp' | 'uui
     suggestions?: any;
     message?: SDKMessage;
   } | {
+    kind: 'permission_decision';
+    toolUseId: string;
+    result?: {
+      behavior: 'allow' | 'deny';
+      updatedInput?: any;
+      message?: string;
+    };
+  } | {
     kind: 'error';
     message: string;
   });

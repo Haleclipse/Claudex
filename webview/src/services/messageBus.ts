@@ -22,7 +22,7 @@ import {
   isMessageStreaming
 } from '../utils/messageUtils';
 import { isSDKUserMessage, isSDKAssistantMessage } from '../../types/messages';
-import { setToolResult, setToolUse, setPermissionRequest } from '../stores/toolMessageStore';
+import { setToolResult, setToolUse, setPermissionRequest, setPermissionResponse, getToolMessage, upsertToolMessage } from '../stores/toolMessageStore';
 
 // ========== 全局状态 ==========
 
@@ -247,6 +247,9 @@ class WebviewMessageBus {
       case 'permission_request':
         this.handlePermissionRequest(event);
         break;
+      case 'permission_decision':
+        this.handlePermissionDecision(event);
+        break;
       case 'result':
         this.handleResult(event);
         break;
@@ -289,19 +292,35 @@ class WebviewMessageBus {
 
     // 处理不同的content格式
     if (typeof messageContent === 'string') {
-      // 纯文本消息 - 创建用户消息
-      const message: ChatMessage = {
-        id: `user_${Date.now()}`,
-        sdkMessage,
-        role: 'user',
-        content: messageContent,
-        contentBlocks: [{ type: 'text', text: messageContent }],
-        timestamp: Date.now(),
-        status: 'sent',
-        sessionId: sdkMessage.session_id || ''
-      };
-      chatState.messages.push(message);
-      console.log('[MessageBus] 创建用户文本消息');
+      // 检查是否为系统中断消息
+      if (messageContent.includes('[Request interrupted by')) {
+        const message: ChatMessage = {
+          id: `system_${Date.now()}`,
+          sdkMessage,
+          role: 'system',
+          content: messageContent,
+          contentBlocks: [{ type: 'text', text: messageContent }],
+          timestamp: Date.now(),
+          status: 'sent',
+          sessionId: sdkMessage.session_id || ''
+        };
+        chatState.messages.push(message);
+        console.log('[MessageBus] 创建系统中断消息');
+      } else {
+        // 纯文本消息 - 创建用户消息
+        const message: ChatMessage = {
+          id: `user_${Date.now()}`,
+          sdkMessage,
+          role: 'user',
+          content: messageContent,
+          contentBlocks: [{ type: 'text', text: messageContent }],
+          timestamp: Date.now(),
+          status: 'sent',
+          sessionId: sdkMessage.session_id || ''
+        };
+        chatState.messages.push(message);
+        console.log('[MessageBus] 创建用户文本消息');
+      }
     } else if (Array.isArray(messageContent)) {
       // 检查第一个内容块的类型来决定处理方式
       const firstBlock = messageContent[0];
@@ -311,11 +330,25 @@ class WebviewMessageBus {
         messageContent.forEach((block: Record<string, any>) => {
           if (block.type === 'tool_result' && block.tool_use_id) {
             console.log('[MessageBus] 处理 tool_result:', block.tool_use_id);
+
+            // 获取 toolUseResult（在 sdkMessage 顶层）
+            const toolUseResult = (sdkMessage as Record<string, any>).toolUseResult;
+
             setToolResult({
               content: block.content,
               is_error: Boolean(block.is_error),
               tool_use_id: block.tool_use_id
             });
+
+            // 保存 toolUseResult 到 store
+            if (toolUseResult) {
+              const toolMessage = getToolMessage(block.tool_use_id);
+              if (toolMessage) {
+                upsertToolMessage(block.tool_use_id, {
+                  toolUseResult
+                });
+              }
+            }
           }
         });
         console.log('[MessageBus] tool_result 消息处理完成，不创建用户消息');
@@ -329,18 +362,34 @@ class WebviewMessageBus {
         });
 
         if (textContent.trim()) {
-          const message: ChatMessage = {
-            id: `user_${Date.now()}`,
-            sdkMessage,
-            role: 'user',
-            content: textContent,
-            contentBlocks: [{ type: 'text', text: textContent }],
-            timestamp: Date.now(),
-            status: 'sent',
-            sessionId: sdkMessage.session_id || ''
-          };
-          chatState.messages.push(message);
-          console.log('[MessageBus] 创建用户文本消息');
+          // 检查是否为系统中断消息
+          if (textContent.includes('[Request interrupted by')) {
+            const message: ChatMessage = {
+              id: `system_${Date.now()}`,
+              sdkMessage,
+              role: 'system',
+              content: textContent,
+              contentBlocks: [{ type: 'text', text: textContent }],
+              timestamp: Date.now(),
+              status: 'sent',
+              sessionId: sdkMessage.session_id || ''
+            };
+            chatState.messages.push(message);
+            console.log('[MessageBus] 创建系统中断消息');
+          } else {
+            const message: ChatMessage = {
+              id: `user_${Date.now()}`,
+              sdkMessage,
+              role: 'user',
+              content: textContent,
+              contentBlocks: [{ type: 'text', text: textContent }],
+              timestamp: Date.now(),
+              status: 'sent',
+              sessionId: sdkMessage.session_id || ''
+            };
+            chatState.messages.push(message);
+            console.log('[MessageBus] 创建用户文本消息');
+          }
         }
       }
     }
@@ -516,6 +565,26 @@ class WebviewMessageBus {
     console.log('[MessageBus] 已关联权限请求到工具消息:', { toolUseId: event.toolUseId });
   }
 
+  private handlePermissionDecision(event: ClaudeEventMessage['payload']) {
+    if (event.kind !== 'permission_decision') {
+      return;
+    }
+
+    console.log('[MessageBus] 权限决策:', event);
+
+    // 更新工具消息的权限状态
+    const allowed = event.result?.behavior === 'allow';
+    setPermissionResponse(event.toolUseId, allowed);
+
+    // 从待处理列表中移除
+    const index = permissionState.pendingRequests.findIndex(r => r.toolUseId === event.toolUseId);
+    if (index !== -1) {
+      permissionState.pendingRequests.splice(index, 1);
+    }
+
+    console.log('[MessageBus] 权限决策已处理:', { toolUseId: event.toolUseId, allowed });
+  }
+
   private handleError(event: ClaudeEventMessage['payload']) {
     if (event.kind !== 'error') {
       return;
@@ -587,6 +656,14 @@ class WebviewMessageBus {
                   is_error: Boolean(block.is_error),
                   tool_use_id: block.tool_use_id
                 });
+
+                // 保存 toolUseResult
+                const toolUseResult = (sdkMessage as Record<string, any>).toolUseResult;
+                if (toolUseResult) {
+                  upsertToolMessage(block.tool_use_id, {
+                    toolUseResult
+                  });
+                }
               }
             });
             return null; // 不创建消息
@@ -595,6 +672,20 @@ class WebviewMessageBus {
 
         // 只有包含实际文本内容的用户消息才创建
         if (content && content.trim()) {
+          // 检查是否为系统中断消息
+          if (content.includes('[Request interrupted by')) {
+            return {
+              id: `system_${Date.now()}_${Math.random()}`,
+              sdkMessage,
+              role: 'system',
+              content,
+              contentBlocks,
+              timestamp: Date.now(),
+              status: 'sent',
+              sessionId: sdkMessage.session_id
+            };
+          }
+
           return {
             id: `user_${Date.now()}_${Math.random()}`,
             sdkMessage,
