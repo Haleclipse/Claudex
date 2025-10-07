@@ -2,12 +2,20 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'node:path';
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
+import { createSvgIconsPlugin } from 'vite-plugin-svg-icons';
 
 export default defineConfig(({ mode }) => ({
   root: __dirname,
   plugins: [
     vue(),
     tailwindcss(),
+    createSvgIconsPlugin({
+      iconDirs: [path.resolve(__dirname, '../assets/icons')],
+      symbolId: 'icon-[name]',
+      svgoOptions: true,
+    }),
     {
       name: 'filter-mdi-fonts',
       generateBundle(options, bundle) {
@@ -19,9 +27,41 @@ export default defineConfig(({ mode }) => ({
         }
       },
     },
+    {
+      name: 'copy-svg-icons-to-media',
+      apply: 'build',
+      async writeBundle(options, bundle) {
+        const srcDir = path.resolve(__dirname, '../assets/icons');
+        const outDir = (options as any).dir || path.resolve(__dirname, '../dist/media');
+        const destDir = path.resolve(outDir, 'icons');
+
+        async function ensureDir(dir: string) {
+          await fsp.mkdir(dir, { recursive: true });
+        }
+
+        async function copyDir(src: string, dest: string) {
+          await ensureDir(dest);
+          const entries = await fsp.readdir(src, { withFileTypes: true });
+          for (const entry of entries) {
+            const s = path.join(src, entry.name);
+            const d = path.join(dest, entry.name);
+            if (entry.isDirectory()) {
+              await copyDir(s, d);
+            } else if (entry.isFile()) {
+              await fsp.copyFile(s, d);
+            }
+          }
+        }
+
+        if (fs.existsSync(srcDir)) {
+          await copyDir(srcDir, destDir);
+        }
+      },
+    },
   ],
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, './src'),
       // 使用本地的 codicon 资源替换依赖包中的资源
       '@vscode/codicons/dist/codicon.css': path.resolve(__dirname, '../assets/codicons/codicon.css'),
       '@vscode/codicons/dist/codicon.ttf': path.resolve(__dirname, '../assets/codicons/codicon.ttf'),
