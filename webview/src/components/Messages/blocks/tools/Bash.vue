@@ -1,75 +1,109 @@
 <template>
-  <div class="bash-tool">
-    <div class="bash-command">
-      <div class="command-label">命令:</div>
-      <pre class="command-content">{{ command }}</pre>
-    </div>
+  <ToolMessageWrapper
+    tool-icon="codicon-terminal"
+    :tool-result="toolResult"
+    :permission-state="permissionState"
+    :default-expanded="shouldExpand"
+    @allow="$emit('allow')"
+    @deny="$emit('deny')"
+  >
+    <template #main>
+      <span class="tool-label">Bash</span>
+      <span v-if="description" class="tool-description">{{ description }}</span>
+      <span v-if="runInBackground" class="bg-badge">background</span>
+    </template>
 
-    <div v-if="hasOptions" class="bash-options">
-      <div class="options-label">选项:</div>
-      <div class="options-grid">
-        <div v-if="timeout" class="option-item">
-          <span class="option-key">超时:</span>
-          <span class="option-value">{{ timeout }}ms</span>
-        </div>
-        <div v-if="description" class="option-item">
-          <span class="option-key">描述:</span>
-          <span class="option-value">{{ description }}</span>
-        </div>
-        <div v-if="runInBackground" class="option-item">
-          <span class="option-key">后台运行:</span>
-          <span class="option-value option-boolean">是</span>
-        </div>
+    <template #expandable>
+      <!-- 命令内容 -->
+      <div class="bash-command">
+        <pre class="command-content">{{ command }}</pre>
       </div>
-    </div>
-  </div>
+
+      <!-- 输出内容 (如果有) -->
+      <div v-if="hasOutput" class="bash-output">
+        <div class="output-header">Output</div>
+        <pre class="output-content">{{ outputContent }}</pre>
+      </div>
+
+      <!-- 错误内容 -->
+      <ToolError :tool-result="toolResult" />
+    </template>
+  </ToolMessageWrapper>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import ToolMessageWrapper from './common/ToolMessageWrapper.vue';
+import ToolError from './common/ToolError.vue';
 
 interface Props {
-  input: any;
-  toolName: string;
+  toolUse?: any;
+  toolResult?: any;
+  toolUseResult?: any;
+  permissionState?: string;
 }
 
 const props = defineProps<Props>();
 
-const command = computed(() => {
-  return props.input?.command || '';
-});
+defineEmits<{
+  allow: [];
+  deny: [];
+}>();
 
-const timeout = computed(() => {
-  return props.input?.timeout;
+const command = computed(() => {
+  return props.toolUse?.input?.command || '';
 });
 
 const description = computed(() => {
-  return props.input?.description;
+  return props.toolUse?.input?.description || '';
 });
 
 const runInBackground = computed(() => {
-  return props.input?.run_in_background;
+  return props.toolUse?.input?.run_in_background || false;
 });
 
-const hasOptions = computed(() => {
-  return timeout.value || description.value || runInBackground.value;
+const outputContent = computed(() => {
+  // 从 toolResult.content 获取输出
+  if (typeof props.toolResult?.content === 'string') {
+    return props.toolResult.content;
+  }
+  return '';
+});
+
+const hasOutput = computed(() => {
+  return outputContent.value && !props.toolResult?.is_error;
+});
+
+// 默认展开条件: 有输出或有错误
+const shouldExpand = computed(() => {
+  return hasOutput.value || !!props.toolResult?.is_error;
 });
 </script>
 
 <style scoped>
-.bash-tool {
-  font-family: var(--vscode-editor-font-family);
+.tool-label {
+  font-weight: 500;
+  color: var(--vscode-foreground);
+  font-size: 0.9em;
+}
+
+.tool-description {
+  color: color-mix(in srgb, var(--vscode-foreground) 70%, transparent);
+  font-size: 0.85em;
+  font-style: italic;
+}
+
+.bg-badge {
+  background-color: color-mix(in srgb, var(--vscode-charts-blue) 20%, transparent);
+  color: var(--vscode-charts-blue);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.75em;
+  font-weight: 500;
 }
 
 .bash-command {
-  margin-bottom: 12px;
-}
-
-.command-label {
-  color: color-mix(in srgb, var(--vscode-foreground) 80%, transparent);
-  font-size: 0.9em;
-  margin-bottom: 4px;
-  font-weight: 500;
+  margin-bottom: 8px;
 }
 
 .command-content {
@@ -79,54 +113,35 @@ const hasOptions = computed(() => {
   padding: 8px 12px;
   color: var(--vscode-terminal-foreground, var(--vscode-editor-foreground));
   font-family: var(--vscode-editor-font-family);
-  /* font-size: var(--vscode-editor-font-size); */
+  font-size: 0.9em;
   overflow-x: auto;
   margin: 0;
   white-space: pre-wrap;
-  border-left: 3px solid var(--vscode-charts-green);
 }
 
-.bash-options {
-  border-top: 1px solid var(--vscode-panel-border);
-  padding-top: 8px;
+.bash-output {
+  margin-top: 8px;
 }
 
-.options-label {
+.output-header {
   color: color-mix(in srgb, var(--vscode-foreground) 80%, transparent);
-  font-size: 0.9em;
-  margin-bottom: 6px;
-  font-weight: 500;
-}
-
-.options-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px;
-}
-
-.option-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   font-size: 0.85em;
-}
-
-.option-key {
-  color: color-mix(in srgb, var(--vscode-foreground) 70%, transparent);
+  margin-bottom: 4px;
   font-weight: 500;
 }
 
-.option-value {
-  color: var(--vscode-foreground);
+.output-content {
+  background-color: color-mix(in srgb, var(--vscode-terminal-background, var(--vscode-editor-background)) 90%, transparent);
+  border: 1px solid var(--vscode-terminal-border, var(--vscode-panel-border));
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: var(--vscode-terminal-foreground, var(--vscode-editor-foreground));
   font-family: var(--vscode-editor-font-family);
-}
-
-.option-boolean {
-  background-color: color-mix(in srgb, var(--vscode-charts-green) 20%, transparent);
-  color: var(--vscode-charts-green);
-  padding: 1px 4px;
-  border-radius: 2px;
-  font-size: 0.8em;
-  font-weight: 500;
+  font-size: 0.85em;
+  overflow-x: auto;
+  margin: 0;
+  white-space: pre-wrap;
+  max-height: 400px;
+  overflow-y: auto;
 }
 </style>
