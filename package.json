@@ -4,6 +4,11 @@
   "description": "Claude Code for VSCode.",
   "version": "0.0.1",
   "publisher": "CometixSpace",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Haleclipse/Claudex"
+  },
   "type": "module",
   "engines": {
     "vscode": "^1.92.0"
@@ -11,6 +16,7 @@
   "categories": [
     "Other"
   ],
+  "icon": "./dist/media/icons/claude-logo.png",
   "main": "./dist/extension.cjs",
   "activationEvents": [
     "onStartupFinished"
@@ -19,303 +25,6 @@
     "configuration": {
       "title": "Claudex",
       "properties": {
-        "claudex.apiKey": {
-          "type": "string",
-          "markdownDescription": "Anthropic API Key（建议通过 SecretStorage 保存，此项仅作调试用途）",
-          "default": "",
-          "order": 1
-        },
-        "claudex.model": {
-          "type": "string",
-          "markdownDescription": "Claude 模型名称",
-          "default": "claude-4-sonnet",
-          "enum": [
-            "claude-4.1-opus",
-            "claude-4-sonnet"
-          ],
-          "enumDescriptions": [
-            "Claude 4 Sonnet - 平衡性能模型",
-            "Claude 4.1 Opus - 最新最强模型"
-          ],
-          "order": 2
-        },
-        "claudex.permissionMode": {
-          "type": "string",
-          "markdownDescription": "权限模式",
-          "default": "default",
-          "enum": [
-            "default",
-            "acceptEdits",
-            "bypassPermissions",
-            "plan"
-          ],
-          "enumDescriptions": [
-            "默认权限（需要用户确认）",
-            "自动接受编辑操作",
-            "绕过权限检查",
-            "计划模式（只生成计划不执行）"
-          ],
-          "order": 3
-        },
-        "claudex.maxTurns": {
-          "type": "number",
-          "markdownDescription": "最大对话轮数",
-          "default": 50,
-          "minimum": 1,
-          "maximum": 100,
-          "order": 4
-        },
-        "claudex.maxThinkingTokens": {
-          "type": "number",
-          "markdownDescription": "最大思考 tokens（留空使用默认值）",
-          "minimum": 1000,
-          "order": 5
-        },
-        "claudex.allowedTools": {
-          "type": "array",
-          "markdownDescription": "允许使用的工具列表（留空表示允许所有）",
-          "items": {
-            "type": "string"
-          },
-          "default": [],
-          "order": 6
-        },
-        "claudex.disallowedTools": {
-          "type": "array",
-          "markdownDescription": "禁用的工具列表",
-          "items": {
-            "type": "string"
-          },
-          "default": [],
-          "order": 7
-        },
-        "claudex.customSystemPrompt": {
-          "type": "string",
-          "markdownDescription": "自定义系统提示词（会替换默认提示词）",
-          "default": "",
-          "order": 8
-        },
-        "claudex.appendSystemPrompt": {
-          "type": "string",
-          "markdownDescription": "附加系统提示词（会追加到默认提示词后）",
-          "default": "",
-          "order": 9
-        },
-        "claudex.includePartialMessages": {
-          "type": "boolean",
-          "markdownDescription": "包含部分消息以实现更流畅的输出",
-          "default": true,
-          "order": 10
-        },
-        "claudex.fallbackModel": {
-          "type": "string",
-          "markdownDescription": "备用模型（主模型不可用时使用）",
-          "default": "",
-          "order": 11
-        },
-        "claudex.additionalDirectories": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "markdownDescription": "授予 Claude 访问的额外目录（绝对路径）",
-          "default": [],
-          "order": 12
-        },
-        "claudex.executableArgs": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "markdownDescription": "Node/Deno/Bun 可执行附加参数（高级）",
-          "default": [],
-          "order": 13
-        },
-        "claudex.extraArgs": {
-          "type": "object",
-          "markdownDescription": "透传给 CLI 的附加标志集合，例如 { \"debug-to-stderr\": null }",
-          "default": {},
-          "order": 14
-        },
-        "claudex.strictMcpConfig": {
-          "type": "boolean",
-          "markdownDescription": "严格 MCP 配置（仅允许配置对象中的服务）",
-          "default": false,
-          "order": 15
-        },
-        "claudex.mcpServers": {
-          "type": "object",
-          "markdownDescription": "MCP 服务器配置（与 SDK 结构一致）",
-          "default": {},
-          "order": 16
-        },
-        "claudex.permissionPromptToolName": {
-          "type": "string",
-          "markdownDescription": "使用指定的权限提示工具名称（与内置 canUseTool 互斥）",
-          "default": "",
-          "order": 17
-        },
-        "claudex.enableToolApprovalPrompt": {
-          "type": "boolean",
-          "markdownDescription": "启用扩展内置的工具调用审批弹窗（canUseTool）",
-          "default": true,
-          "order": 18
-        },
-        "claudex.autoApproveTools": {
-          "type": "boolean",
-          "markdownDescription": "自动批准工具调用（测试用途）；需启用 canUseTool 且未配置 permissionPromptToolName",
-          "default": false,
-          "order": 19
-        },
-        "claudex.streamingEnabled": {
-          "type": "boolean",
-          "markdownDescription": "启用流式响应（实时显示 AI 输出）",
-          "default": true,
-          "order": 20
-        },
-        "claudex.maxStreamingTokens": {
-          "type": "number",
-          "markdownDescription": "流式响应最大 token 数量",
-          "default": 8000,
-          "minimum": 100,
-          "maximum": 32000,
-          "order": 21
-        },
-        "claudex.sessionAutoSave": {
-          "type": "boolean",
-          "markdownDescription": "自动保存会话历史",
-          "default": true,
-          "order": 22
-        },
-        "claudex.sessionMaxHistory": {
-          "type": "number",
-          "markdownDescription": "会话历史最大保存数量",
-          "default": 100,
-          "minimum": 10,
-          "maximum": 1000,
-          "order": 23
-        },
-        "claudex.sessionCleanupDays": {
-          "type": "number",
-          "markdownDescription": "自动清理过期会话的天数",
-          "default": 30,
-          "minimum": 1,
-          "maximum": 365,
-          "order": 24
-        },
-        "claudex.permissionCacheEnabled": {
-          "type": "boolean",
-          "markdownDescription": "启用权限决策缓存",
-          "default": true,
-          "order": 25
-        },
-        "claudex.permissionCacheExpiry": {
-          "type": "number",
-          "markdownDescription": "权限缓存过期时间（小时）",
-          "default": 24,
-          "minimum": 1,
-          "maximum": 168,
-          "order": 26
-        },
-        "claudex.costTrackingEnabled": {
-          "type": "boolean",
-          "markdownDescription": "启用成本追踪",
-          "default": true,
-          "order": 27
-        },
-        "claudex.costWarningThreshold": {
-          "type": "number",
-          "markdownDescription": "成本警告阈值（美元）",
-          "default": 1,
-          "minimum": 0.1,
-          "maximum": 100,
-          "order": 28
-        },
-        "claudex.costLimitEnabled": {
-          "type": "boolean",
-          "markdownDescription": "启用成本限制",
-          "default": false,
-          "order": 29
-        },
-        "claudex.costDailyLimit": {
-          "type": "number",
-          "markdownDescription": "每日成本限制（美元）",
-          "default": 10,
-          "minimum": 0.1,
-          "maximum": 1000,
-          "order": 30
-        },
-        "claudex.hooksEnabled": {
-          "type": "boolean",
-          "markdownDescription": "启用生命周期钩子",
-          "default": true,
-          "order": 31
-        },
-        "claudex.debugLogging": {
-          "type": "boolean",
-          "markdownDescription": "启用调试日志",
-          "default": false,
-          "order": 32
-        },
-        "claudex.attachmentMaxSize": {
-          "type": "number",
-          "markdownDescription": "附件最大大小（MB）",
-          "default": 10,
-          "minimum": 1,
-          "maximum": 100,
-          "order": 33
-        },
-        "claudex.attachmentTypes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "markdownDescription": "允许的附件类型（MIME 类型）",
-          "default": [
-            "image/png",
-            "image/jpeg",
-            "image/gif",
-            "image/webp",
-            "text/plain",
-            "text/markdown",
-            "application/json"
-          ],
-          "order": 34
-        },
-        "claudex.uiTheme": {
-          "type": "string",
-          "markdownDescription": "UI 主题",
-          "default": "auto",
-          "enum": [
-            "auto",
-            "light",
-            "dark"
-          ],
-          "enumDescriptions": [
-            "跟随 VSCode 主题",
-            "浅色主题",
-            "深色主题"
-          ],
-          "order": 35
-        },
-        "claudex.uiShowTokenCount": {
-          "type": "boolean",
-          "markdownDescription": "显示 token 计数",
-          "default": true,
-          "order": 36
-        },
-        "claudex.uiShowCost": {
-          "type": "boolean",
-          "markdownDescription": "显示成本信息",
-          "default": true,
-          "order": 37
-        },
-        "claudex.uiAutoScroll": {
-          "type": "boolean",
-          "markdownDescription": "自动滚动到最新消息",
-          "default": true,
-          "order": 38
-        }
       }
     },
     "commands": [
@@ -327,14 +36,6 @@
         "command": "claudex.openSettings",
         "title": "配置Claudex",
         "icon": "$(gear)"
-      },
-      {
-        "command": "claudex.resumeFromHistory",
-        "title": "Claudex: 从历史会话恢复"
-      },
-      {
-        "command": "claudex.openHistory",
-        "title": "Claudex: 查看历史会话"
       }
     ],
     "viewsContainers": {
@@ -342,7 +43,7 @@
         {
           "id": "claudex",
           "title": "Claudex",
-          "icon": "$(chat)"
+          "icon": "dist/media/icons/claude.svg"
         }
       ]
     },
@@ -352,7 +53,6 @@
           "id": "claudex",
           "type": "webview",
           "name": "Claudex",
-          "icon": "$(chat)",
           "when": "claudex.hasWorkspaceFolder"
         }
       ]
