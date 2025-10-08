@@ -11,7 +11,7 @@ import type {
   SDKSystemMessage,
   SDKPartialAssistantMessage,
   SDKCompactBoundaryMessage
-} from '@anthropic-ai/claude-code';
+} from '@anthropic-ai/claude-agent-sdk';
 
 // VSCode API接口
 export interface VSCodeAPI {
@@ -212,6 +212,11 @@ export interface MessageMetadata {
   error?: string;
   cost?: number;
   model?: string;
+  agents?: string[];
+  permissionMode?: string;
+  tools?: string[];
+  cwd?: string;
+  apiKeySource?: string;
   correlationId?: string;
   [key: string]: any;
 }
