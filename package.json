@@ -342,7 +342,7 @@
         {
           "id": "claudex",
           "title": "Claudex",
-          "icon": "$(chat)"
+          "icon": "resources/activity-icon.svg"
         }
       ]
     },
@@ -352,7 +352,7 @@
           "id": "claudex",
           "type": "webview",
           "name": "Claudex",
-          "icon": "$(chat)",
+          "icon": "resources/activity-icon.svg",
           "when": "claudex.hasWorkspaceFolder"
         }
       ]

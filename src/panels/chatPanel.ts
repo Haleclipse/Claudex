@@ -27,7 +27,7 @@ export class ChatPanel {
       },
     );
 
-    this.panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'icon.png');
+    this.panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'activity-icon.svg');
     this.panel.webview.html = this.getHtml(this.panel.webview);
 
     this.panel.webview.onDidReceiveMessage(this.onMessage, this, this.disposables);
