@@ -7,3 +7,5 @@ node_modules
 .serena/
 ref/
 .mcp.json
+package-lock.json
+AGENTS.md
