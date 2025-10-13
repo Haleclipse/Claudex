@@ -453,12 +453,16 @@ onMounted(() => {
   border: 1px solid var(--vscode-panel-border);
   border-radius: 8px;
   padding: 16px;
+  padding-bottom: 8px;
+  box-sizing: content-box;
   background: var(--vscode-editor-background);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
-  height: 120px;
+  /* height: 120px; */
+  overflow: hidden;
+  max-height: 120px;
 }
 
 .session-card:hover {
