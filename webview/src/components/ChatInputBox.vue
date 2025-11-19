@@ -87,6 +87,8 @@
       style="min-height: 34px; max-height: 240px; resize: none; overflow-y: hidden; word-wrap: break-word; white-space: pre-wrap; width: 100%; height: 34px;"
       @input="handleInput"
       @keydown="handleKeydown"
+      @compositionstart="handleCompositionStart"
+      @compositionend="handleCompositionEnd"
     />
 
     <!-- 第三行：使用 ButtonArea 组件 -->
@@ -151,6 +153,8 @@ const content = ref('')
 const isLoading = ref(false)
 const selectedModelLocal = ref(props.selectedModel)
 const textareaRef = ref<HTMLDivElement>()
+// 检查输入法的状态
+const isComposing = ref(false)
 
 // 定义Add Context菜单的业务数据
 const addContextItems: DropdownItemType[] = [
@@ -345,9 +349,10 @@ function autoResizeTextarea() {
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault()
-    handleSubmit()
+   // 如果正在输入法组合中（也就是正在拼音输入），则不处理回车键
+   if (event.key === "Enter" && !event.shiftKey && !isComposing.value) {
+    event.preventDefault();
+    handleSubmit();
   }
 
   // 延迟检查内容是否为空（在按键处理后）
@@ -361,6 +366,14 @@ function handleKeydown(event: KeyboardEvent) {
       }
     }, 0)
   }
+}
+
+function handleCompositionStart() {
+  isComposing.value = true;
+}
+
+function handleCompositionEnd() {
+  isComposing.value = false;
 }
 
 function handleSubmit() {
