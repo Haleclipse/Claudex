@@ -10,7 +10,7 @@ import type {
   SDKSystemMessage,
   SDKCompactBoundaryMessage,
   SDKPartialAssistantMessage
-} from '@anthropic-ai/claude-code';
+} from '@anthropic-ai/claude-agent-sdk';
 
 // 内容块类型定义
 export interface ContentBlock {
@@ -159,7 +159,9 @@ function extractSystemMessageText(message: SDKMessage): string {
 
   // 类型守卫：检查是否为 SDKSystemMessage
   if (isSDKSystemMessage(message)) {
-    return `系统初始化 - 模型: ${message.model || '未知'}`;
+    const agentInfo = message.agents?.length ? `，启用代理：${message.agents.join(', ')}` : '';
+    const toolInfo = message.tools?.length ? `，可用工具：${message.tools.join(', ')}` : '';
+    return `系统初始化 - 模型: ${message.model || '未知'}${agentInfo}${toolInfo}`;
   }
 
   // 类型守卫：检查是否为 SDKCompactBoundaryMessage

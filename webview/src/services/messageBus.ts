@@ -10,10 +10,11 @@ import type {
   ChatMessage,
   ChatState,
   SessionState,
-  PermissionState
+  PermissionState,
+  MessageMetadata
 } from '../../types/messages';
 import type { QueuedMessage, MessageQueueState } from '../../types/queue';
-import type { SDKMessage } from '@anthropic-ai/claude-code';
+import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import {
   extractTextContent,
   extractContentBlocks,
@@ -21,7 +22,7 @@ import {
   getMessageDisplayTitle,
   isMessageStreaming
 } from '../utils/messageUtils';
-import { isSDKUserMessage, isSDKAssistantMessage } from '../../types/messages';
+import { isSDKUserMessage, isSDKAssistantMessage, isSDKSystemMessage } from '../../types/messages';
 import { setToolResult, setToolUse, setPermissionRequest, setPermissionResponse, getToolMessage, upsertToolMessage } from '../stores/toolMessageStore';
 
 // ========== 全局状态 ==========
@@ -761,7 +762,19 @@ class WebviewMessageBus {
         return messages.length > 0 ? (messages.length === 1 ? messages[0] : messages) : null;
       }
       case 'result':
-      case 'system':
+      case 'system': {
+        const metadata: MessageMetadata | undefined =
+          sdkMessage.type === 'system' && isSDKSystemMessage(sdkMessage)
+            ? {
+                model: sdkMessage.model,
+                permissionMode: sdkMessage.permissionMode,
+                tools: sdkMessage.tools,
+                cwd: sdkMessage.cwd,
+                agents: sdkMessage.agents,
+                apiKeySource: sdkMessage.apiKeySource
+              }
+            : undefined;
+
         return {
           id: `${sdkMessage.type}_${Date.now()}_${Math.random()}`,
           sdkMessage,
@@ -770,8 +783,10 @@ class WebviewMessageBus {
           contentBlocks,
           timestamp: Date.now(),
           status: 'completed',
-          sessionId: sdkMessage.session_id
+          sessionId: sdkMessage.session_id,
+          metadata
         };
+      }
       default:
         return null;
     }

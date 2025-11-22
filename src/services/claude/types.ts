@@ -14,7 +14,7 @@ import type {
   SDKSystemMessage,
   SDKUserMessage,
   SDKUserMessageReplay,
-} from '@anthropic-ai/claude-code';
+} from '@anthropic-ai/claude-agent-sdk';
 
 // 供 UI 使用的消息事件总线类型（仅数据透传与轻量增强）
 

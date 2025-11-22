@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { Options, PermissionResult, Query, SDKMessage, SDKUserMessage, CanUseTool } from '@anthropic-ai/claude-code';
+import type { Options, PermissionResult, Query, SDKMessage, SDKUserMessage, CanUseTool } from '@anthropic-ai/claude-agent-sdk';
 import Anthropic from '@anthropic-ai/sdk';
 import { DeferredPromise } from '../common/deferred';
 import { Disposable } from '../common/lifecycle';
@@ -88,12 +88,12 @@ class ClaudeCodeSession {
 		try {
 			// Build options for the Claude Code SDK
 			const isDebugEnabled = this.configService.getConfig(ConfigKey.Internal.ClaudeCodeDebugEnabled);
-			const options: Options = {
-				cwd: this.workspaceService.getWorkspaceFolders().at(0)?.fsPath,
-				abortController,
-				executable: 'node',
-				pathToClaudeCodeExecutable: this.envService.claudeCliPath,
-				env: {
+                        const options: Options = {
+                                cwd: this.workspaceService.getWorkspaceFolders().at(0)?.fsPath,
+                                abortController,
+                                executable: 'node',
+                                pathToClaudeCodeExecutable: this.envService.claudeCliPath,
+                                env: {
 					...process.env,
 					...(isDebugEnabled ? { DEBUG: '1' } : {}),
 					CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
@@ -101,15 +101,30 @@ class ClaudeCodeSession {
 				resume: this.sessionId,
 				model: 'claude-sonnet-4-20250514',
 				permissionMode: 'default',
-				includePartialMessages: true,
-				canUseTool: async (name, input, opts): Promise<PermissionResult> => {
-					return this.canUseTool(name, input, bus, opts as any);
-				},
-				...optionsOverride,
-			};
+                                includePartialMessages: true,
+                                canUseTool: async (name, input, opts): Promise<PermissionResult> => {
+                                        return this.canUseTool(name, input, bus, opts as any);
+                                },
+                                ...optionsOverride,
+                        };
+
+                        if (!optionsOverride?.systemPrompt) {
+                                const customSystemPrompt = this.configService.getConfig<string>('claudex.customSystemPrompt')?.trim();
+                                const appendSystemPrompt = this.configService.getConfig<string>('claudex.appendSystemPrompt')?.trim();
+
+                                if (customSystemPrompt) {
+                                        options.systemPrompt = customSystemPrompt;
+                                } else {
+                                        options.systemPrompt = {
+                                                type: 'preset',
+                                                preset: 'claude_code',
+                                                ...(appendSystemPrompt ? { append: appendSystemPrompt } : {})
+                                        } as const;
+                                }
+                        }
 
 			this.logService.trace(`Claude CLI SDK: Starting query with options: ${JSON.stringify({ ...options, env: undefined })}`);
-			const { query } = await import('@anthropic-ai/claude-code');
+                        const { query } = await import('@anthropic-ai/claude-agent-sdk');
 			const def = new DeferredPromise<void>();
 
 			async function* createPromptIterable(promptText: string, sessionId?: string): AsyncIterable<SDKUserMessage> {

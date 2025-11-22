@@ -39,7 +39,7 @@ const copyClaudeCliPlugin = {
         const require = createRequire(import.meta.url);
         build.onEnd(async () => {
             try {
-                const pkgDir = path.dirname(require.resolve('@anthropic-ai/claude-code/cli.js'));
+                const pkgDir = path.dirname(require.resolve('@anthropic-ai/claude-agent-sdk/cli.js'));
                 const outDir = path.resolve(process.cwd(), 'dist');
                 await fs.mkdir(outDir, { recursive: true });
 
